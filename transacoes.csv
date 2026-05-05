@@ -1,0 +1,21 @@
+data,descricao,categoria,fornecedor,valor
+2026-01-05,Almoço equipa,Alimentação,Restaurant du Lac,85.50
+2026-01-12,Material escritório,Material,Office World,234.80
+2026-01-15,Viagem Zurique,Transporte,SBB,112.00
+2026-01-22,Software licença,IT,Microsoft,450.00
+2026-01-28,Almoço cliente,Alimentação,Le Jardin,156.30
+2026-02-03,Combustível,Transporte,Shell,89.40
+2026-02-10,Material escritório,Material,Office World,178.50
+2026-02-14,Viagem Genebra,Transporte,SBB,98.00
+2026-02-19,Almoço equipa,Alimentação,Restaurant du Lac,92.00
+2026-02-25,Software licença,IT,Adobe,299.00
+2026-03-04,Almoço cliente,Alimentação,Le Jardin,210.50
+2026-03-11,Material escritório,Material,Paperworld,145.00
+2026-03-15,Viagem Lausanne,Transporte,SBB,45.00
+2026-03-20,Hardware,IT,Apple,1250.00
+2026-03-27,Combustível,Transporte,Shell,76.80
+2026-04-02,Almoço equipa,Alimentação,Restaurant du Lac,110.00
+2026-04-09,Software licença,IT,Microsoft,450.00
+2026-04-14,Material escritório,Material,Office World,320.00
+2026-04-21,Viagem Berna,Transporte,SBB,134.00
+2026-04-28,Almoço cliente,Alimentação,Le Jardin,189.00
