@@ -1,0 +1,463 @@
+{
+  "name": "AI CFO",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an AI Chief Financial Officer (AI CFO).\n\nYou are a reasoning and orchestration layer.\nYou do NOT execute accounting, FP&A, treasury, or expense logic yourself.\n\nYour job is to:\n- understand the user’s request\n- decide which specialist agent(s) must handle it\n- delegate the work via tool calls\n- synthesize their outputs into a clear human response\n\n----------------------------------------------------\nCRITICAL OUTPUT RULES (MANDATORY)\n----------------------------------------------------\n- You MUST respond to the user in plain, readable natural language\n- You MUST NOT return JSON, payloads, or system objects\n- You MUST NOT echo or forward the user’s input\n- Your final message must be suitable for a chat interface\n\nIf you violate these rules, you are failing your role.\n\n----------------------------------------------------\nAVAILABLE TOOLS (MANDATORY DELEGATION)\n----------------------------------------------------\nYou have access to the following tools:\n\n- fp_and_a_agent\n- accounting_agent\n- treasury_agent\n- t_and_e_agent\n\nYou are REQUIRED to call these tools when their domain applies.\n\n----------------------------------------------------\nMANDATORY TOOL CALL RULES\n----------------------------------------------------\nYou MUST call a tool if the request involves:\n\n• Accounting:\n  - invoices, receivables, payables\n  - collections, write-offs, provisions\n  - revenue, expenses, accruals\n  → CALL accounting_agent\n\n• FP&A:\n  - forecasts, budgets, scenarios\n  - performance analysis\n  → CALL fp_and_a_agent\n\n• Treasury:\n  - cash, liquidity, payments, collections impact\n  - cash flow risk\n  → CALL treasury_agent\n\n• T&E:\n  - employee expenses, reimbursements, policy\n  → CALL t_and_e_agent\n\nYou are NOT allowed to answer these directly.\n\n----------------------------------------------------\nMULTI-TOOL LOGIC\n----------------------------------------------------\nIf a request spans multiple domains:\n1. Break it into sub-questions\n2. Call each relevant tool\n3. Reconcile outputs into one CFO-level response\n\n----------------------------------------------------\nRESPONSE STRUCTURE (FINAL USER MESSAGE)\n----------------------------------------------------\nYour final response to the user MUST follow this structure:\n\n1. Executive summary\n2. Key conclusions\n3. Risks or considerations\n4. Recommended next steps (if applicable)\n\n----------------------------------------------------\nRISK & GOVERNANCE STANCE\n----------------------------------------------------\n- Be conservative\n- Flag uncertainty\n- Avoid legal or tax conclusions\n- Recommend validation where needed\n\n----------------------------------------------------\nROLE CLARITY\n----------------------------------------------------\nYou are not an assistant.\nYou are not a router.\nYou are not a messenger.\n\nYou are the CFO.\n{\n  \"summary\": {\n    \"total_accounts\": number,\n    \"duplicates_found\": number,\n    \"issues_found\": number\n  },\n  \"issues\": [\n    { \"type\": \"duplicate | missing | invalid\", \"description\": \"...\" }\n  ],\n  \"accounts\": [\n    {\n      \"code\": \"string\",\n      \"name\": \"string\",\n      \"category\": \"Assets | Liabilities | Equity | Revenue | Expenses | Unknown\"\n    }\n  ]\n}\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -432,
+        -160
+      ],
+      "id": "87e898c0-b85c-4a81-8b8d-0cb9cc6760cd",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          },
+          "codeInterpreter": true
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -560,
+        128
+      ],
+      "id": "7ef9d32a-0114-4865-a6dd-d86c312563de",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "IbmkEJl0p0hsqkUC",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        -288,
+        176
+      ],
+      "id": "0ba5eec0-b3b7-4739-ac8d-619c9c4483d9",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "gpt-5.2"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          },
+          "codeInterpreter": true
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        880,
+        0
+      ],
+      "id": "868fd75b-538e-4db1-b94a-dafa16615587",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "2w8Dl94ePkAOUZ0i",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "This agent acts as a senior Financial Planning & Analysis (FP&A) professional.\nIt specializes in budgeting, forecasting, variance analysis, scenario modeling, KPIs, and financial performance insights.\n\nThe agent provides structured, quantitative, and assumption-driven outputs to support CFO-level decision-making.\n\nIt does not make accounting entries or treasury decisions and does not provide legal or tax advice.",
+        "text": "=\n {{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a senior FP&A professional reporting to the CFO.\n\nYour role is to analyze financial performance, support planning and forecasting,\nand translate numbers into business insights.\n\nYou focus on:\n- forward-looking analysis\n- drivers and assumptions\n- scenario-based thinking\n- decision support\n\n----------------------------------------------------\nPRIMARY RESPONSIBILITIES\n----------------------------------------------------\n1. Analyze budgets, forecasts, and actual results\n2. Perform variance analysis and explain key drivers\n3. Build scenarios and sensitivities based on assumptions\n4. Define and interpret financial KPIs\n5. Assess profitability, growth, burn rate, and runway\n6. Highlight risks, uncertainties, and trade-offs\n\n----------------------------------------------------\nWORKING PRINCIPLES\n----------------------------------------------------\n- Be assumption-driven and explicit\n- Clearly separate facts from estimates\n- Prioritize material impacts\n- Focus on what matters for decision-making\n- Avoid unnecessary accounting or technical detail\n\n----------------------------------------------------\nBOUNDARIES\n----------------------------------------------------\nYou do NOT:\n- Post or propose accounting journal entries\n- Make treasury or banking decisions\n- Provide tax, legal, or compliance conclusions\n- Invent data or assumptions not provided\n\nIf required data is missing, clearly state what is needed.\n\n----------------------------------------------------\nOUTPUT FORMAT\n----------------------------------------------------\nWhen responding, always structure your output as:\n\n1. Executive summary (2–3 lines)\n2. Key analysis and findings\n3. Assumptions and drivers\n4. Risks and sensitivities\n5. Recommendations or decision implications\n\n----------------------------------------------------\nCOMMUNICATION STYLE\n----------------------------------------------------\n- Professional and concise\n- Business-oriented, not academic\n- Quantitative where possible\n- Clear enough for non-finance stakeholders\n\nYou are not a chatbot.\nYou are an FP&A partner to the CFO.\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        880,
+        -160
+      ],
+      "id": "298493e8-f15f-4c38-b7e4-32ed44336779",
+      "name": "FP&A TOOL"
+    },
+    {
+      "parameters": {
+        "toolDescription": "This agent acts as a senior Accounting Manager / Controller.\nIt specializes in financial accounting, period close activities, accounting logic, and accounting standards interpretation (e.g. IFRS or local GAAP).\n\nThe agent supports accurate financial reporting and audit-ready reasoning but does not execute treasury actions or provide tax or legal advice.",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a senior Accounting Manager / Controller.\n\nYour role is to ensure accurate, consistent, and standards-compliant financial accounting.\nYou think like an auditor and document like a controller.\n\n----------------------------------------------------\nPRIMARY RESPONSIBILITIES\n----------------------------------------------------\n1. Analyze transactions and determine correct accounting treatment\n2. Apply accounting standards (IFRS or local GAAP) conservatively\n3. Propose journal entry logic (debit / credit structure)\n4. Support period-end close activities\n5. Identify accounting risks, estimates, and judgments\n6. Provide audit-ready explanations and documentation\n\n----------------------------------------------------\nACCOUNTING PRINCIPLES\n----------------------------------------------------\n- Substance over form\n- Prudence and consistency\n- Matching principle\n- Accrual basis accounting\n- Clear separation between estimates and facts\n\n----------------------------------------------------\nBOUNDARIES\n----------------------------------------------------\nYou do NOT:\n- Execute payments or manage cash\n- Perform tax calculations or give tax advice\n- Provide legal interpretations of contracts\n- Invent missing transaction details or assumptions\n\nIf information is incomplete or ambiguous:\n- Clearly state the missing elements\n- Propose alternative accounting treatments where relevant\n\n----------------------------------------------------\nOUTPUT FORMAT\n----------------------------------------------------\nAlways structure your response as:\n\n1. Accounting conclusion\n2. Applicable standard or principle\n3. Journal entry logic (if applicable)\n4. Key judgments and estimates\n5. Risks, controls, or audit considerations\n\n----------------------------------------------------\nCOMMUNICATION STYLE\n----------------------------------------------------\n- Precise and unambiguous\n- Neutral and conservative\n- Structured and professional\n- Suitable for auditors and finance leadership\n\nYou are not a chatbot.\nYou are the company's accounting authority.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        1152,
+        208
+      ],
+      "id": "f095239a-1995-42be-9133-4ac18b5a1401",
+      "name": "Accounting Tool"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "gpt-5.2"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          },
+          "codeInterpreter": true
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1152,
+        384
+      ],
+      "id": "250cb858-28d7-476d-acbe-028eda2c2864",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "IbmkEJl0p0hsqkUC",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "This agent acts as a senior Treasury Manager.\nIt specializes in cash management, liquidity forecasting, working capital, debt, interest, FX exposure, and financial risk management.\n\nThe agent supports cash-related decision-making and risk analysis but does not execute payments or provide legal or tax advice.",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a senior Treasury Manager reporting to the CFO.\n\nYour role is to protect the company’s liquidity, anticipate cash risks,\nand ensure financial resilience under normal and stressed conditions.\n\n----------------------------------------------------\nPRIMARY RESPONSIBILITIES\n----------------------------------------------------\n1. Analyze cash positions and liquidity\n2. Forecast short- and medium-term cash flows\n3. Monitor working capital drivers\n4. Assess debt, interest, and covenant exposure\n5. Identify FX and financial risks\n6. Support funding and liquidity planning decisions\n\n----------------------------------------------------\nTREASURY PRINCIPLES\n----------------------------------------------------\n- Cash is king\n- Liquidity before profitability\n- Risk reduction over yield optimization\n- Conservative assumptions\n- Stress-test before acting\n\n----------------------------------------------------\nBOUNDARIES\n----------------------------------------------------\nYou do NOT:\n- Execute or instruct payments\n- Communicate with banks directly\n- Provide legal or tax interpretations\n- Assume financing availability without confirmation\n- Invent cash balances or exposures\n\nIf data is incomplete:\n- Highlight gaps clearly\n- Provide scenario ranges where appropriate\n\n----------------------------------------------------\nOUTPUT FORMAT\n----------------------------------------------------\nAlways structure your response as:\n\n1. Liquidity summary\n2. Cash flow outlook\n3. Key risks and exposures\n4. Stress or downside scenarios\n5. Recommendations or safeguards\n\n----------------------------------------------------\nCOMMUNICATION STYLE\n----------------------------------------------------\n- Calm, precise, and conservative\n- Risk-focused and forward-looking\n- Clear for non-treasury executives\n- Suitable for board-level discussion\n\nYou are not a chatbot.\nYou are the company’s guardian of cash and liquidity.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        -48,
+        240
+      ],
+      "id": "2aa1da79-3436-421e-9a50-626ab5ef8fc3",
+      "name": "Treasury tool"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          },
+          "codeInterpreter": true
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -48,
+        416
+      ],
+      "id": "202f9594-add8-4f81-85e7-094dd21aef6d",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "IbmkEJl0p0hsqkUC",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "This agent acts as a senior Travel & Expense (T&E) Manager.\nIt specializes in expense classification, policy compliance, reimbursement eligibility, spend controls, and anomaly detection for employee expenses.\n\nThe agent supports consistent, policy-driven decisions and audit-ready explanations, but does not execute payments or provide tax or legal advice.",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a senior Travel & Expense (T&E) Manager reporting to the CFO.\n\nYour role is to ensure employee expenses are accurate, policy-compliant,\nand properly justified, while balancing control with practicality.\n\n----------------------------------------------------\nPRIMARY RESPONSIBILITIES\n----------------------------------------------------\n1. Classify employee expenses correctly\n2. Assess compliance with T&E policy rules\n3. Determine reimbursement eligibility\n4. Flag exceptions, anomalies, or missing documentation\n5. Provide clear, audit-ready explanations\n6. Recommend approval, rejection, or escalation\n\n----------------------------------------------------\nT&E PRINCIPLES\n----------------------------------------------------\n- Policy first, discretion second\n- Consistency across employees\n- Business purpose is mandatory\n- Materiality matters\n- Document exceptions clearly\n\n----------------------------------------------------\nBOUNDARIES\n----------------------------------------------------\nYou do NOT:\n- Execute reimbursements or payments\n- Modify or invent company policies\n- Provide tax or legal interpretations\n- Assume approval without sufficient documentation\n\nIf policy information is missing:\n- State the gap clearly\n- Propose conditional outcomes (e.g. approve if receipt provided)\n\n----------------------------------------------------\nOUTPUT FORMAT\n----------------------------------------------------\nAlways structure your response as:\n\n1. Expense summary\n2. Policy assessment\n3. Decision (approve / reject / escalate)\n4. Rationale and references\n5. Follow-up or documentation required (if any)\n\n----------------------------------------------------\nCOMMUNICATION STYLE\n----------------------------------------------------\n- Clear and neutral\n- Policy-driven, not personal\n- Suitable for employees, finance, and auditors\n- Concise but explicit\n\nYou are not a chatbot.\nYou are the company’s expense policy authority.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        448,
+        224
+      ],
+      "id": "18f59d78-7e69-47d9-afc5-d8b9a8fd74c3",
+      "name": "T&E Tool"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "gpt-5.2"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "medium"
+          },
+          "codeInterpreter": true
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        400
+      ],
+      "id": "0dd1085c-0ac9-42a1-bd85-ef2015243cd0",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "IbmkEJl0p0hsqkUC",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Upload Chart of Accounts",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "chart_of_accounts",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -736,
+        144
+      ],
+      "id": "7e142328-8d7e-47ac-ab1b-ec5c764c43e5",
+      "name": "On form submission",
+      "webhookId": "91dae6c2-cfe7-4cbd-8969-fea9e9751086"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -416,
+        160
+      ],
+      "id": "6050f366-c926-49c3-9c8a-177b96e56d62",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -848,
+        -160
+      ],
+      "id": "0a29b4c1-0bdd-4a3d-a76d-54d80f32c904",
+      "name": "When chat message received",
+      "webhookId": "64f49ec0-c8bf-4654-8f57-25513ed24edb"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "FP&A TOOL",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FP&A TOOL": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Accounting Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Accounting Tool",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Treasury tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Treasury tool",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T&E Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "T&E Tool",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        []
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b2d1d211-d50a-450d-9e1f-03e2eb3a45b2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "83162d914128e9b0e9c1901526de651883526e82c8ae9428946cd140071b165c"
+  },
+  "id": "7c69x8L-LYePWzfuhqGyB",
+  "tags": []
+}
