@@ -1,0 +1,369 @@
+{
+  "name": "resumo links para email",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "09ae1972-4915-4edc-acd1-f90d40c60b3f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1wsAvRUdGbLagLZvkJXcBiqV7qqUTt7fmEb5nI-IETx8",
+          "mode": "list",
+          "cachedResultName": "Resumo_n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wsAvRUdGbLagLZvkJXcBiqV7qqUTt7fmEb5nI-IETx8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wsAvRUdGbLagLZvkJXcBiqV7qqUTt7fmEb5nI-IETx8/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "8b70ab7f-abd1-4709-b39f-06ecad19fa91",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Zyk2nPBqKiMaR5gy",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json['Link do Artigo'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "3b5cf5aa-bd5b-488a-a0d7-d4e0233f19aa",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "textoExtraido",
+              "cssSelector": "p",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "6c23b878-7c76-4fb6-a1c4-d9819727ba52",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Você é um assistente especializado em análise e resumo de textos.\n\nSua tarefa é analisar o conteúdo fornecido e gerar um resumo claro, objetivo e bem estruturado.\n\nRegras obrigatórias:\n- O resumo deve conter exatamente 5 tópicos principais.\n- Cada tópico deve ser apresentado em formato de lista (bullet points).\n- Os tópicos devem ser concisos, mas informativos.\n- Sempre escreva a resposta em português, independentemente do idioma do texto analisado.\n- Não traduza o texto completo, apenas resuma.\n- Foque nas ideias mais importantes e relevantes.\n\nTexto para análise:\n{{ $json.textoExtraido }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "3a29516b-ea9f-4208-89f6-fa46cd99470f",
+      "name": "Message a model",
+      "retryOnFail": true,
+      "maxTries": null,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jrln9X4rklbH7yUn",
+          "name": "Resumon8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Get row(s) in sheet').item.json.Email }}",
+        "subject": "=Aqui esta o resumo : {{ $('Get row(s) in sheet').item.json['Link do Artigo'] }}",
+        "emailType": "text",
+        "message": "={{ $json.content.parts[0].text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "1fabf0ad-18ea-4a83-8ab8-935a5e0bc4f3",
+      "name": "Send a message",
+      "webhookId": "8a1e2d91-5735-4732-949d-9b422ad05475",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "5Fh3XcYIcEJAh7zk",
+          "name": "Resumosn8ngmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1wsAvRUdGbLagLZvkJXcBiqV7qqUTt7fmEb5nI-IETx8",
+          "mode": "list",
+          "cachedResultName": "Resumo_n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wsAvRUdGbLagLZvkJXcBiqV7qqUTt7fmEb5nI-IETx8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wsAvRUdGbLagLZvkJXcBiqV7qqUTt7fmEb5nI-IETx8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Resumo ja enviado",
+            "Link do Artigo": "={{ $('Get row(s) in sheet').item.json['Link do Artigo'] }}"
+          },
+          "matchingColumns": [
+            "Link do Artigo"
+          ],
+          "schema": [
+            {
+              "id": "Link do Artigo",
+              "displayName": "Link do Artigo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1600,
+        0
+      ],
+      "id": "01672bb7-4613-45e1-8659-0f242428487a",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Zyk2nPBqKiMaR5gy",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "50082c9a-b77a-479a-a11d-10d08da58b12",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        0
+      ],
+      "id": "916b5a8d-af8f-468b-b92b-e5278695e7c7",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a69ab139-a1e5-4f6f-81ce-6ad2bcfea57b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "83162d914128e9b0e9c1901526de651883526e82c8ae9428946cd140071b165c"
+  },
+  "id": "5ikdIn3GCmtWevWi",
+  "tags": []
+}
